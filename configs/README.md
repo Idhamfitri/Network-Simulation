@@ -1,9 +1,5 @@
 # Configuration notes and device exports
 
-These notes organize the configuration **draft** supplied for the CST337 Packet Tracer project. They are not a verbatim `show running-config` export. The source contains alternatives, abbreviated examples, inline comments, and conflicting interface assignments. Export each device's actual running configuration into a separate `.txt` file and compare it with these notes before calling the project reproducible.
-
-> **Cisco IOS syntax:** Commands in `ios` blocks have been separated from explanations. Interface names and next hops depend on your `.pkt` file. Copy a device-specific block only after checking the topology and resolving the [items to verify](#items-to-verify-before-publishing).
-
 ## Device map
 
 | Device | Intended role | Export filename |
@@ -348,15 +344,3 @@ show ip access-lists
 show ip nat translations
 show ip nat statistics
 ```
-
-Use commands only on device types that support them. Test allowed and blocked flows from hosts at each site, then record actual observations in [`../docs/verification.md`](../docs/verification.md). Export sanitized configurations under their device filenames. Remove passwords, wireless passphrases, SNMP communities and other credentials before publishing.
-
-## Items to verify before publishing
-
-1. **Area layout:** Narrative assigns backbone Area 0 and building/HQ Areas 10/20/30/40; the original report's area table conflicts.
-2. **Malaysia edge addresses:** `.1/.5` versus `.2/.6` on the core router/ISP links.
-3. **HQ default next hops:** The pasted R2 commands include `.4`, which is a `/30` network address on two links; the plan suggests `.5` on the ISP side. Check every router's interface and route table.
-4. **HQ area assignment:** The HQ core routers and distribution MLS must advertise only networks on connected interfaces.
-5. **Guest isolation:** The pasted global Guest ACL's Malaysia destination `10.10.0.0/16` omits Building 2 and 3; confirm all protected subnets and ACL application points.
-6. **WAN and NAT resilience:** Validate the complete forward and return paths under normal operation and after a link failure. Do not infer success from redundant cabling alone.
-7. **Actual exports:** Draft commands above do not replace per-device `show running-config` output.
