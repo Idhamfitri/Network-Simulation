@@ -25,7 +25,6 @@
 
 Buildings 2 and 3 use `10.11.X.0/24` and `10.12.X.0/24`. For the full table see [`../docs/ip_addressing_scheme.csv`](../docs/ip_addressing_scheme.csv). The source assigns `Fa0/6–20` to a department per access switch, guest ports `Fa0/23–24` in Malaysia (`Fa0/21–22` at HQ), and uses VLAN 99 as native. Confirm the actual ports and native VLAN in `show interfaces trunk`.
 
-Example for **one Administration access switch**, assuming VLAN 10 already exists:
 
 ```ios
 interface range FastEthernet0/6 - 20
@@ -33,7 +32,6 @@ interface range FastEthernet0/6 - 20
  switchport access vlan 10
 ```
 
-Example of a distribution uplink to an access switch, with interface name and allowed VLAN list verified for that link:
 
 ```ios
 interface GigabitEthernet0/1
@@ -41,7 +39,6 @@ interface GigabitEthernet0/1
  switchport trunk allowed vlan 10,20,30,40
 ```
 
-Example Building 1 SVI gateways, pending comparison with actual export:
 
 ```ios
 ip routing
@@ -61,7 +58,6 @@ interface Vlan40
 
 ## Routed link plan from the source notes
 
-The following is a *link plan*, not verified interface output. The source has transcription errors on some rows; use the `.pkt` configuration as authority for port numbering.
 
 | Endpoints | Planned network | Planned host addresses |
 | --- | --- | --- |
@@ -77,8 +73,6 @@ The following is a *link plan*, not verified interface output. The source has tr
 | HQ R1 / R2 ↔ SG DIST | `10.255.40.0/30` / `10.255.40.4/30` | `.1 ↔ .2` / `.5 ↔ .6` |
 
 ### OSPF: Malaysia distribution switches
-
-The source assigns VLAN interfaces to building areas and routed uplinks to Area 0. Router IDs below are those in the pasted notes, not validated exports.
 
 **Building 1:**
 
@@ -121,7 +115,6 @@ router ospf 10
 
 ### OSPF: Malaysia core and edge
 
-The source combines the two core switches into a single sample. Their routed uplink prefixes differ: confirm each interface and include *only connected networks* in each device's export.
 
 ```ios
 ! MY-CORE-MLS1 example; router ID from source: 10.10.10.10
@@ -154,11 +147,9 @@ ip route 0.0.0.0 0.0.0.0 192.168.100.2
 ip route 0.0.0.0 0.0.0.0 192.168.100.6 10
 ```
 
-OSPF is intended only within the enterprise devices; the ISP routers use static routes. The source text listing ISP routers under Area 0 contradicts that intent.
-
 ### OSPF: Singapore HQ
 
-The source assigns HQ user/server VLANs to Area 40 on the distribution MLS and both HQ uplinks to Area 0. It also suggests Area 40 network statements on the HQ core routers without matching connected VLAN interfaces. Confirm real interfaces before enabling those statements.
+The source assigns HQ user/server VLANs to Area 40 on the distribution MLS and both HQ uplinks to Area 0. It also suggests Area 40 network statements on the HQ core routers without matching connected VLAN interfaces.
 
 ```ios
 ! SG-DIST-MLS1-HQ example
@@ -193,11 +184,7 @@ ip route 0.0.0.0 0.0.0.0 192.168.210.5
 ip route 0.0.0.0 0.0.0.0 192.168.211.5 10
 ```
 
-The HQ edge may need additional routes for the Malaysia prefixes and/or controlled default origination. Test both directions before claiming full site-to-site reachability. The source contains a conflicting alternative that places HQ VLAN network statements on edge routers; do not merge the alternatives blindly.
-
 ## DHCP: Building 1 example
-
-The source only includes one complete DHCP pool. Address exclusions reserve `.1`–`.20`, so the ordinary DHCP leasing range begins at `.21`, not `.2`. Build the other VLAN pools and buildings from their *actual* exports.
 
 ```ios
 ip dhcp excluded-address 10.10.10.1 10.10.10.20
@@ -211,12 +198,9 @@ ip dhcp pool ADMIN_B1
  domain-name mycompany.local
 ```
 
-Check DHCP bindings and client gateways with `show ip dhcp binding` and a client IP configuration view. The DNS server above is from the lab notes; a simulated resolver may require a different address.
-
 ## ACLs: policy and source examples
 
-The source uses one global named ACL for all Production subnets and another for all Guest subnets. When attached inbound to each building's SVI, only local-source entries normally match there. Keep the actual `show running-config` export separate from this simplified **Building 1 example**.
-
+`show running-config` 
 ```ios
 ip access-list extended PROD_TO_ADMIN_B1
  deny ip 10.10.20.0 0.0.0.255 10.10.10.0 0.0.0.255
@@ -239,11 +223,11 @@ interface Vlan40
  ip access-group GUEST_POLICY_B1 in
 ```
 
-This example assumes the Malaysia address plan stays within `10.8.0.0/13` and the HQ address plan within `10.1.0.0/16`. Add explicit protection for **other internal routed networks**, including `172.16.0.0/16` and relevant `192.168.0.0/16` lab infrastructure, if guest access to those must be denied. Test ACL order and counters. Permitting IT Support outbound does not override restrictions applied elsewhere or establish authenticated admin access.
+This example assumes the Malaysia address plan stays within `10.8.0.0/13` and the HQ address plan within `10.1.0.0/16`. Add explicit protection for **other internal routed networks**, including `172.16.0.0/16` and relevant `192.168.0.0/16` lab infrastructure, if guest access to those must be denied. 
 
 ## WAN static-route examples from notes
 
-All next hops depend on the planned /30 interfaces and actual topology. The source includes duplicate and incomplete route notes; the following are examples to compare with running configurations, not a complete verified route table.
+All next hops depend on the planned /30 interfaces and actual topology. The source includes duplicate and incomplete route notes.
 
 ```ios
 ! MY-ISP1
@@ -275,11 +259,11 @@ ip route 10.8.0.0 255.248.0.0 192.168.200.5
 ip route 10.8.0.0 255.248.0.0 192.168.201.5 10
 ```
 
-On SG-ISP1/2, two equal-distance static routes to HQ may share traffic. Verify return reachability when an edge or ISP path fails; a floating route only activates when its primary route leaves the routing table, which is not necessarily the same as end-to-end failure detection.
+On SG-ISP1/2, two equal-distance static routes to HQ may share traffic.
 
 ## NAT/PAT: intended Malaysia Internet breakout
 
-The later source draft improves on the earlier broad NAT ACL by excluding traffic to HQ. This example covers Malaysia-to-simulated-Internet traffic only. NAT behavior with **two overload interfaces using one ACL** must be verified in Packet Tracer on both paths; it may require separate route-aware rules depending on the supported IOS feature set. Do not assume the backup works without testing.
+The later source draft improves on the earlier broad NAT ACL by excluding traffic to HQ. This example covers Malaysia-to-simulated-Internet traffic only. 
 
 ```ios
 ip access-list extended NAT_MY
@@ -297,11 +281,9 @@ interface Serial0/2/1
  ip nat outside
 ```
 
-**Important source inconsistency:** The pasted NAT block assigned `192.168.100.2` and `.6` to the **MY core router**, whereas the link plan and default routes assign `.1` and `.5` to the core router and `.2` and `.6` to the ISP routers. Use `show ip interface brief` from the `.pkt` file to settle this. The source also used `G0/0/0` and `G0/0/1` as HQ NAT overload interfaces while identifying its outside ports as Serial; do not copy those conflicting HQ NAT snippets.
 
 ## Optional simulated Internet segment
 
-The notes propose a separate Internet router and HTTP server using documentation address blocks. This is a planned extension unless the actual `.pkt` file includes it.
 
 | Segment | Router / host | Address |
 | --- | --- | --- |
@@ -326,8 +308,6 @@ interface Serial0/1/0
  no shutdown
 ip route 0.0.0.0 0.0.0.0 203.0.113.2
 ```
-
-Enable HTTP on the simulated server using Packet Tracer's server UI. If PAT is configured at the enterprise edge, return routes to every private enterprise subnet are **not inherently required on the Internet router** for translated outbound flows; the draft's suggested private return routes may be needed for *untranslated* site-to-site lab flows, which should be evaluated separately.
 
 ## Verify the exported configuration
 
